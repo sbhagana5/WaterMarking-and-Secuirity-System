@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/WaterMarking.iml" filepath="$PROJECT_DIR$/WaterMarking.iml" />
+      <module fileurl="file://$PROJECT_DIR$/assets/assets.iml" filepath="$PROJECT_DIR$/assets/assets.iml" />
+      <module fileurl="file://$PROJECT_DIR$/components/components.iml" filepath="$PROJECT_DIR$/components/components.iml" />
+      <module fileurl="file://$PROJECT_DIR$/components/dashboard/dashboard.iml" filepath="$PROJECT_DIR$/components/dashboard/dashboard.iml" />
+      <module fileurl="file://$PROJECT_DIR$/components/login/login.iml" filepath="$PROJECT_DIR$/components/login/login.iml" />
+      <module fileurl="file://$PROJECT_DIR$/components/popover-layout/popover-layout.iml" filepath="$PROJECT_DIR$/components/popover-layout/popover-layout.iml" />
+      <module fileurl="file://$PROJECT_DIR$/components/signup/signup.iml" filepath="$PROJECT_DIR$/components/signup/signup.iml" />
+    </modules>
+  </component>
+</project>
