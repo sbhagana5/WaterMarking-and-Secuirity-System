@@ -1,15 +1,52 @@
-var flag=true;
-function submitForm(){
-    // event.preventDefault();
+function submitForm(event){
+    event.preventDefault();
     var formData = new FormData(document.getElementById('myForm'));
     var jsonObject={};
     formData.forEach((value, key) => {
         jsonObject[key] = value;
     });
+    console.log(jsonObject)
     processData(jsonObject);
+
 }
 function processData(data) {
+
+    $.ajax({
+        url: "http://ws-18819:8080/watermark/signup",
+        type:"post",
+        data: {
+            employeeId:data.userId,
+            password:data.password,
+            name:data.FullName
+        },
+        contentType:"application/json",
+        cors: true ,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        }
+
+    }).done(function() {
+       alert("done");
+    });
+
     console.log(data);
+   /* fetch('http://ws-18819:8080/watermark/signup', {
+        method: 'POST',
+        body: {
+            employeeId:data.userId,
+            password:data.password,
+            name:data.FullName
+        }
+    })
+        .then(response => {
+            if (response.message=='success') {
+                alert("Success !. You are getting redirectd to login page")
+                window.location.href = '../../../../WaterMarking/components/login/src/login.html';
+            } else {
+                alert("404. Try again")
+            }
+
+})*/
 
 }
 

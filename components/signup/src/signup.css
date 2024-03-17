@@ -1,5 +1,10 @@
 body{
-    background-color: #dee9ff;
+    background-image:url("../../../assets/src/bg2.jpg");
+    background-size: cover; /* Cover the entire background */
+    background-repeat: no-repeat;
+    margin-left: 450px;
+
+
 }
 
 .registration-form{
@@ -9,14 +14,13 @@ body{
 
 .registration-form form{
     background-color: #fff;
-    max-width: 600px;
-    margin: auto;
-    padding: 50px 70px;
-    border-top-left-radius: 30px;
-    border-top-right-radius: 30px;
+    max-width: 500px;
+    margin-left:286px ;
+    padding: 30px 70px;
+    border-radius: 30px;
 
-    box-shadow:  20px 20px 60px #bebebe,
-    -20px -20px 60px #ffffff;
+
+
 }
 
 .registration-form .form-icon{
@@ -50,9 +54,9 @@ body{
 }
 
 .registration-form .social-media{
-    max-width: 600px;
+    max-width: 00px;
     background-color: #fff;
-    margin: auto;
+
     padding: 35px 0;
     text-align: center;
     border-bottom-left-radius: 30px;
@@ -117,10 +121,11 @@ input[type="password"] {
 
 }
 
-input[type="password"].match {
+.match {
     border-color: green;
 }
 
-input[type="password"].no-match {
+.no-match {
     border-color: red;
 }
+

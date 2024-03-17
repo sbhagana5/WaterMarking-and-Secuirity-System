@@ -1,5 +1,5 @@
 body{
-    background-color: #dee9ff;
+    background-image: url("../../../assets/src/bg2.jpg");
 }
 
 .registration-form{
@@ -94,4 +94,30 @@ body{
         font-size: 30px;
         line-height: 70px;
     }
+}
+.password-container,.F_name-container,.uId,.p {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.password-icon,.f_cross,.f_check,.u_cross,.u_check,.p_check,.p_cross {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    display: none;
+}
+
+
+input[type="password"] {
+    margin-bottom: 10px;
+
+}
+
+input[type="password"].match {
+    border-color: green;
+}
+
+input[type="password"].no-match {
+    border-color: red;
 }
