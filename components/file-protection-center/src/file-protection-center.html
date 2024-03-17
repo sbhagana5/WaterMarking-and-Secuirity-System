@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watermark PDF</title>
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>-->
+
+    <script src="./pdf-lib-script.js"></script>
+    <script src="../../../assets/dist/watermark.js"></script>
+    <script type="module" src="../../../assets/lib/blob/index.js"></script>
+    <script type="module" src="../../../assets/lib/canvas/index.js"></script>
+    <script type="module" src="../../../assets/lib/canvas/pool.js"></script>
+    <script type="module" src="../../../assets/lib/functions/index.js"></script>
+    <script type="module" src="../../../assets/lib/image/index.js"></script>
+    <script type="module" src="../../../assets/lib/object/index.js"></script>
+    <script type="module" src="../../../assets/lib/style/image/index.js"></script>
+    <script type="module" src="../../../assets/lib/style/text/index.js"></script>
+    <script type="module" src="../../../assets/lib/style/index.js"></script>
+    <script type="module" src="../../../assets/lib/index.js"></script>
+    <script src="./file-protection-center.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+        }
+
+        .upload-label {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            justify-content: center;
+            cursor: pointer;
+        }
+        #fileUpload {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            border: 2px dashed #ccc;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        #fileUpload:hover {
+            border-color: #666;
+        }
+
+        #fileUpload input[type="file"] {
+            display: none;
+        }
+
+        #filePreview img {
+            width: fit-content;
+            max-width: 100%;
+            max-height: 150px;
+        }
+
+        #watermarkOptions,
+        #securityOptions {
+            display: none;
+        }
+
+        .dropdown-menu {
+            position: relative;
+            border: none;
+        }
+
+        .btn-100 {
+            width: 100%;
+        }
+
+        .submitBtn {
+            display: none;
+        }
+
+        .mt-3 {
+            margin-top: 1rem !important;
+        }
+
+        #filePreview {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .collapsible {
+            background-color: #777;
+            color: white;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .active, .collapsible:hover {
+            background-color: #555;
+        }
+
+        .content {
+            padding: 0 18px;
+            display: none;
+            overflow: hidden;
+            background-color: #f1f1f1;
+        }
+        .dropdown {
+            display: flex;
+            flex-direction: column;
+        }
+        .securityOptionCheckbox {
+            width: fit-content;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container mt-5">
+    <form action="submitFile" id="loginForm">
+        <div id="fileUpload">
+            <input type="file" id="uploadInput">
+            <label for="uploadInput" class="upload-label">Click here to upload file</label>
+        </div>
+        <div id="filePreview" class="form-group" style="visibility: hidden" class="mt-3">
+            <img id="originalImage" class="form-control-file" alt="">
+        </div>
+        <div id="watermarkOptions" class="mt-3">
+            <div class="form-group">
+                <label for="watermarkType">Watermark Type:</label>
+                <select class="form-control" id="watermarkType">
+                    <option value="text">Text Watermark</option>
+                    <option value="image">Image Watermark</option>
+                </select>
+            </div>
+            <div id="textWatermark" style="display: block;">
+                <div class="form-group">
+                    <label for="watermarkText">Watermark Text:</label>
+                    <input type="text" class="form-control" id="watermarkText">
+                </div>
+            </div>
+            <div id="imageWatermark" style="display: none;">
+                <div class="form-group">
+                    <label for="watermarkImage">Upload Watermark Image:</label>
+                    <input type="file" class="form-control-file" id="watermarkImage">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="position">Position:</label>
+                <select class="form-control" id="position">
+                    <option value="topleft">Top Left</option>
+                    <option value="topright">Top Right</option>
+                    <option value="bottomleft">Bottom Left</option>
+                    <option value="bottomright">Bottom Right</option>
+                    <option value="center"></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="transparency">Transparency:</label>
+                <select class="form-control" id="transparency">
+                    <option value="1">No Transparency</option>
+                    <option value="0.25">25%</option>
+                    <option value="0.5">50%</option>
+                    <option value="0.75">75%</option>
+                </select>
+            </div>
+        </div>
+        <div id="securityOptions" class="mt-3">
+            <div class="dropdown form-group">
+                <div style="display: flex;align-items: center;gap: 10px;"><input type="checkbox" id="securityCheckbox" class="securityOptionCheckbox form-control" /><span>Security Option</span></div>
+                <div id='dropMenu' class="dropdown-menu" aria-labelledby="securityDropdown">
+                    <div class="form-group">
+                        <label for="passPhrase">Enter Passphrase:</label>
+                        <input type="password" class="form-control" id="passPhrase">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassPhrase">Confirm Passphrase:</label>
+                        <input type="password" class="form-control" id="confirmPassPhrase">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="submitBtn" class="mt-3 submitBtn">
+            <button type="submit" class="btn btn-primary" id="submitButton" disabled>Submit</button>
+        </div>
+    </form>
+</div>
+
+
+<script>
+    const customerId = null;
+    const fileUpload = document.getElementById('fileUpload');
+    const fileInput = document.getElementById('uploadInput');
+    const filePreview = document.getElementById('filePreview');
+    const watermarkOptions = document.getElementById('watermarkOptions');
+    const securityOptions = document.getElementById('securityOptions');
+    const submitButton = document.getElementById('submitButton');
+    const watermarkTypeSelect = document.getElementById('watermarkType');
+    const textWatermarkDiv = document.getElementById('textWatermark');
+    const imageWatermarkDiv = document.getElementById('imageWatermark');
+    const securityDropdown = document.getElementById('securityDropdown');
+    const securityCheckbox = document.getElementById('securityCheckbox')
+    const dropMenu = document.getElementById('dropMenu');
+    const submitBtn = document.getElementById('submitBtn');
+    const loginForm = document.getElementById('loginForm');
+    let globalOriginalFile = null;
+    let globalWatermarkImage = null;
+    let originalPDF = document.getElementById('originalImage');
+    // const uploaded
+
+    fileInput.addEventListener('change', async (e) => {
+        const [file] = fileInput.files;
+        if (file.type === 'application/pdf') {
+            originalPDF = file;
+            console.log(originalPDF)
+        }
+        const originalImage = document.querySelector('#originalImage');
+        originalImage.src = await handleFileUpload(file);
+        globalOriginalFile = originalImage.src;
+    });
+    document.getElementById('watermarkImage').addEventListener('change', async (e) => {
+        const [file] = document.getElementById('watermarkImage').files;
+        globalWatermarkImage = await handleFileUpload(file);
+        // console.log(globalWatermarkImage)
+        // console.log(await resizeImage(globalWatermarkImage, 30, 30));
+        globalWatermarkImage = await resizeImage(globalWatermarkImage, 40, 40)
+    })
+    watermarkTypeSelect.addEventListener('change', toggleWatermarkOptions);
+    securityCheckbox.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (securityCheckbox.checked) {
+            dropMenu.style.display = "block";
+        } else {
+            dropMenu.style.display = "none";
+        }
+    });
+
+    var getX = function(boat, logo) {
+        return 73;
+    };
+
+    var getY = function(boat, logo) {
+        return 63;
+    };
+
+    // loginForm.addEventListener('change', (e) => {
+    //     e.preventDefault();
+    //
+    //     const originalImage = document.getElementById('originalImage');
+    //     const watermarkType = document.getElementById('watermarkType').value;
+    //     let watermarkValue;
+    //     if (watermarkType === 'text') {
+    //         watermarkValue = document.getElementById('watermarkText').value;
+    //     } else {
+    //         watermarkValue = document.getElementById('watermarkImage').value;
+    //     }
+    //     const position = document.getElementById('position').value;
+    //     const transparency = document.getElementById('transparency').value;
+    //     const securityCheckbox = document.getElementById('securityCheckbox').checked;
+    //     let passPhrase;
+    //     let confirmPassPhrase;
+    //     if (securityCheckbox){
+    //         passPhrase = document.getElementById('passPhrase').value;
+    //         confirmPassPhrase = document.getElementById('confirmPassPhrase').value;
+    //     }
+    //
+    //     const allFieldsFilled = originalImage && watermarkValue && position && transparency && (securityCheckbox ? (passPhrase && confirmPassPhrase) : true);
+    //     console.log(allFieldsFilled)
+    //     allFieldsFilled && submitButton.removeAttribute('disabled');
+    //     // Log the values
+    //     console.log('Uploaded Input:', originalImage.src);
+    //     console.log('Watermark Type:', watermarkType);
+    //     console.log('Watermark Text:', watermarkValue);
+    //     console.log('Position:', position);
+    //     console.log('Transparency:', transparency);
+    //     console.log('Security Checkbox:', securityCheckbox);
+    //     console.log('Passphrase:', passPhrase);
+    //     console.log('Confirm Passphrase:', confirmPassPhrase);
+    //     // console.log(submitBtn.va)
+    // } )
+
+
+
+
+
+
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+    })
+    loginForm.addEventListener('change', (e) => {
+        e.preventDefault();
+
+        const originalImage = document.getElementById('originalImage').src;
+        const watermarkType = document.getElementById('watermarkType').value;
+        const watermarkValue = watermarkType === 'text' ? document.getElementById('watermarkText').value : document.getElementById('watermarkImage').value;
+        const position = document.getElementById('position').value;
+        const transparency = document.getElementById('transparency').value;
+        const securityCheckbox = document.getElementById('securityCheckbox').checked;
+        const passPhrase = document.getElementById('passPhrase').value;
+        const confirmPassPhrase = document.getElementById('confirmPassPhrase').value;
+
+        const allFieldsFilled = originalImage && watermarkValue && position && transparency && (securityCheckbox ? (passPhrase && confirmPassPhrase) : true);
+        console.log(allFieldsFilled)
+        submitButton.disabled = !allFieldsFilled;
+
+        console.log('Uploaded Input:', originalImage);
+        console.log('Watermark Type:', watermarkType);
+        console.log('Watermark Value:', watermarkValue);
+        console.log('Position:', position);
+        console.log('Transparency:', transparency);
+        console.log('Security Checkbox:', securityCheckbox);
+        console.log('Passphrase:', passPhrase);
+        console.log('Confirm Passphrase:', confirmPassPhrase);
+
+        console.log(submitButton)
+        // e.target.reset(); // Reset the form after submission
+    });
+    submitButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const originalImage = document.getElementById('originalImage').src;
+        const watermarkType = document.getElementById('watermarkType').value;
+        const watermarkValue = watermarkType === 'text' ? document.getElementById('watermarkText').value : globalWatermarkImage;
+        const position = document.getElementById('position').value;
+        const transparency = document.getElementById('transparency').value;
+        const securityCheckbox = document.getElementById('securityCheckbox').checked;
+        const passPhrase = document.getElementById('passPhrase').value;
+        const confirmPassPhrase = document.getElementById('confirmPassPhrase').value;
+
+        // Combine all form values into a single string for console logging
+        const formValues = `Uploaded Input: ${originalImage}, Watermark Type: ${watermarkType}, Watermark Value: ${watermarkValue}, Position: ${position}, Transparency: ${transparency}, Security Checkbox: ${securityCheckbox}, Passphrase: ${passPhrase}, Confirm Passphrase: ${confirmPassPhrase}`;
+
+
+        if (originalImage){
+            handelWatermarking(originalImage, watermarkType, watermarkValue, position, transparency).then(
+                (watermarkedFile) => {
+                    processData(watermarkedFile, customerId);
+                }
+            );
+        }
+        if(originalPDF){
+            handelWatermarkForPDF(originalPDF, watermarkType, watermarkValue, position, transparency).then(
+                (watermarkedFile) => {
+                    processData(watermarkedFile, customerId);
+                }
+            )
+        }
+
+        const modifiedPdfBytes = await addWatermarkToPDF(new Uint8Array(originalPDF.src), "CONFIDENTIAL");
+        console.log(modifiedPdfBytes)
+    })
+
+
+    // fileInput.onchange = function(event) {
+    //     var file = event.target.files[0];
+    //     var fileReader = new FileReader();
+    //     fileReader.onload = function() {
+    //         var typedarray = new Uint8Array(this.result);
+    //         console.log(typedarray);
+    //         const loadingTask = pdfjsLib.getDocument(typedarray);
+    //         loadingTask.promise.then(pdf => {
+    //             // The document is loaded here...
+    //             //This below is just for demonstration purposes showing that it works with the moderen api
+    //             console.log(pdf)
+    //             pdf.getPage(1).then(function(page) {
+    //                 console.log('Page loaded');
+    //
+    //                 var scale = 1.5;
+    //                 var viewport = page.getViewport({
+    //                     scale: scale
+    //                 });
+    //
+    //                 // var canvas = document.getElementById('pdfCanvas');
+    //                 // var context = canvas.getContext('2d');
+    //                 // canvas.height = viewport.height;
+    //                 // canvas.width = viewport.width;
+    //                 //
+    //                 // // Render PDF page into canvas context
+    //                 // var renderContext = {
+    //                 //     canvasContext: context,
+    //                 //     viewport: viewport
+    //                 // };
+    //                 // var renderTask = page.render(renderContext);
+    //                 // renderTask.promise.then(function() {
+    //                 //     console.log('Page rendered');
+    //                 // });
+    //
+    //             });
+    //             //end of example code
+    //         });
+    //
+    //     }
+    //     const doc = fileReader.readAsArrayBuffer(file);
+    //     console.log(doc, file)
+    // }
+    function handelWatermarking(targetFile, watermarkType, watermarkValue, position, transparency) {
+        return new Promise((resolve, reject) => {
+            if (watermarkType === "image") {
+                let watermarkFunction;
+                switch (position) {
+                    case "topleft":
+                        watermarkFunction = watermark.image.upperLeft(transparency);
+                        break;
+                    case "topright":
+                        watermarkFunction = watermark.image.upperRight(transparency);
+                        break;
+                    case "bottomright":
+                        watermarkFunction = watermark.image.lowerRight(transparency);
+                        break;
+                    case "bottomleft":
+                        watermarkFunction = watermark.image.lowerLeft(transparency);
+                        break;
+                    case "center":
+                        watermarkFunction = watermark.image.center(transparency);
+                        break;
+                    default:
+                        reject("Invalid position");
+                        return;
+                }
+                watermark([targetFile, watermarkValue])
+                    .image(watermarkFunction)
+                    .then((img) => {
+                        resolve(img.src);
+                    })
+                    .catch((err) => reject(err));
+            } else if (watermarkType === "text") {
+                let watermarkTextFunction;
+                switch (position) {
+                    case "topleft":
+                        watermarkTextFunction = watermark.text.upperLeft(watermarkValue, '20px Josefin Slab', '#000', transparency, 48);
+                        break;
+                    case "topright":
+                        watermarkTextFunction = watermark.text.upperRight(watermarkValue, '20px Josefin Slab', '#000', transparency, 48);
+                        break;
+                    case "bottomright":
+                        watermarkTextFunction = watermark.text.lowerRight(watermarkValue, '20px Josefin Slab', '#000', transparency, 48);
+                        break;
+                    case "bottomleft":
+                        watermarkTextFunction = watermark.text.lowerLeft(watermarkValue, '20px Josefin Slab', '#000', transparency, 48);
+                        break;
+                    case "center":
+                        watermarkTextFunction = watermark.text.center(watermarkValue, '20px Josefin Slab', '#000', transparency, 48);
+                        break;
+                    default:
+                        reject("Invalid position");
+                        return;
+                }
+                watermark([targetFile]).image(watermarkTextFunction)
+                    .then((img) => {
+                        resolve(img.src);
+                    })
+                    .catch((err) => reject(err));
+            } else {
+                reject("Invalid watermark type");
+            }
+        });
+    }
+
+    function handelWatermarkForPDF(targetFile, watermarkType, watermarkValue, position, transparency) {
+        if (watermarkType === "image"){
+            PDFWatermark({
+                pdf_path: targetFile,
+                image_path: watermarkValue,
+                output_dir: './image-wala.pdf',
+            }).then(() => console.log('Done 2!!'))
+                .catch((err) => console.error(err));
+        }
+        else {
+            PDFWatermark({
+                pdf_path: targetFile,
+                text: watermarkValue,
+                output_dir: './text-wala.pdf',
+                textOption: {
+                    x: 530,
+                    y: 20,
+                },
+            }).then(() => console.log('Done!!'))
+                .catch((err) => console.error(err));
+        }
+
+    }
+
+    function handleFileUpload(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                resolve(reader.result)
+                fileUpload.style.display = 'none'
+                filePreview.style.display = 'flex';
+                filePreview.style.visibility = 'visible'
+                // fileUpload.style.opacity = '0';
+                // fileUpload.style.pointerEvents = 'none';
+                watermarkOptions.style.display = 'block';
+                securityOptions.style.display = 'block';
+                submitBtn.style.display = 'block';
+                submitButton.parentNode.classList.add('mt-3');
+            })
+
+            reader.readAsDataURL(file);
+        })
+    }
+
+    function rotatedWatermark() {
+        return function(target) {
+            var context = target.getContext('2d');
+            context.save();
+
+
+            context.restore();
+            return target;
+        }
+    }
+
+    function toggleWatermarkOptions() {
+        const selectedValue = watermarkTypeSelect.value;
+        if (selectedValue === 'text') {
+            textWatermarkDiv.style.display = 'block';
+            imageWatermarkDiv.style.display = 'none';
+        } else if (selectedValue === 'image') {
+            textWatermarkDiv.style.display = 'none';
+            imageWatermarkDiv.style.display = 'block';
+        }
+    }
+
+    function toggleSecurityOptions() {
+        dropMenu.classList.toggle('show');
+    }
+
+    function resizeImage(image, width, height) {
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // If the provided image is a URL, load it into an Image element
+            if (typeof image === 'string') {
+                const img = new Image();
+                img.onload = function() {
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL()); // Returns a data URL of the resized image
+                };
+                img.onerror = reject;
+                img.src = image;
+            } else if (image instanceof HTMLImageElement) { // If the provided image is an HTMLImageElement
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(image, 0, 0, width, height);
+                resolve(canvas.toDataURL()); // Returns a data URL of the resized image
+            } else {
+                reject(new Error('Invalid image type'));
+            }
+        });
+    }
+
+    console.log('Running watermarkPdf');
+
+    function processData(data) {
+
+        console.log(data);
+        fetch('http://ws-18819:8080/watermark/upload', {
+            method: 'POST',
+            body: data
+        }).then(response => {
+                if (response.ok) { // Check if the response is successful (status code 2xx)
+                    return response.json(); // Parse the JSON response
+                } else {
+                    throw new Error('Network response was not ok.'); // Throw an error for non-successful response
+                }
+            })
+            .then(data => {
+                // Process the JSON data
+                if (data && data.success) {
+                    // Success case
+                    alert("Success! Your file is WaterMarked. Redirecting to Dashboard");
+                    window.location.href = '../../../../WaterMarking/components/login/src/dashboard.html';
+                } else {
+                    // Server returned a success status code but the response does not indicate success
+                    throw new Error('Watermarking failed.');
+                }
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error during fetch:', error);
+                alert("An error occurred. Please try again later.");
+            });
+
+    }
+
+
+    // async function addWatermarkToPDF(pdfBytes, watermarkText) {
+    //     // Load the existing PDF document
+    //     const pdfDoc = await PDFDocument.load(pdfBytes);
+    //
+    //     // Get the first page of the document
+    //     const firstPage = pdfDoc.getPages()[0];
+    //
+    //     // Calculate the text size based on the page size
+    //     const fontSize = 30;
+    //     const { width, height } = firstPage.getSize();
+    //     const textWidth = firstPage.getFont('Helvetica').widthOfTextAtSize(watermarkText, fontSize);
+    //     const textHeight = firstPage.getFont('Helvetica').heightAtSize(fontSize);
+    //     const textX = (width - textWidth) / 2;
+    //     const textY = (height - textHeight) / 2;
+    //
+    //     // Add the watermark text to the page
+    //     firstPage.drawText(watermarkText, {
+    //         x: textX,
+    //         y: textY,
+    //         size: fontSize,
+    //         color: rgb(0.5, 0.5, 0.5), // Gray color for watermark
+    //     });
+    //
+    //     // Serialize the PDF document to bytes
+    //     const modifiedPdfBytes = await pdfDoc.save();
+    //
+    //     return modifiedPdfBytes;
+    // }
+</script>
+
+<script>
+
+</script>
+</body>
+
+</html>
