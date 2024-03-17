@@ -341,16 +341,16 @@
                 }
             );
         }
-        if(originalPDF){
-            handelWatermarkForPDF(originalPDF, watermarkType, watermarkValue, position, transparency).then(
-                (watermarkedFile) => {
-                    processData(watermarkedFile, customerId);
-                }
-            )
-        }
+        // if(originalPDF){
+        //     handelWatermarkForPDF(originalPDF, watermarkType, watermarkValue, position, transparency).then(
+        //         (watermarkedFile) => {
+        //             processData(watermarkedFile, customerId);
+        //         }
+        //     )
+        // }
 
-        const modifiedPdfBytes = await addWatermarkToPDF(new Uint8Array(originalPDF.src), "CONFIDENTIAL");
-        console.log(modifiedPdfBytes)
+        // const modifiedPdfBytes = await addWatermarkToPDF(new Uint8Array(originalPDF.src), "CONFIDENTIAL");
+        // console.log(modifiedPdfBytes)
     })
 
 
