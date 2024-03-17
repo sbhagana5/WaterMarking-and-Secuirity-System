@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watermark PDF</title>
 <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>-->
+
+    <script src="./pdf-lib-script.js"></script>
     <script src="../../../assets/dist/watermark.js"></script>
     <script type="module" src="../../../assets/lib/blob/index.js"></script>
     <script type="module" src="../../../assets/lib/canvas/index.js"></script>
@@ -190,7 +192,6 @@
 
 
 <script>
-
     const customerId = null;
     const fileUpload = document.getElementById('fileUpload');
     const fileInput = document.getElementById('uploadInput');
@@ -215,6 +216,7 @@
         const [file] = fileInput.files;
         if (file.type === 'application/pdf') {
             originalPDF = file;
+            console.log(originalPDF)
         }
         const originalImage = document.querySelector('#originalImage');
         originalImage.src = await handleFileUpload(file);
@@ -317,7 +319,7 @@
         console.log(submitButton)
         // e.target.reset(); // Reset the form after submission
     });
-    submitButton.addEventListener('click', (e) => {
+    submitButton.addEventListener('click', async (e) => {
         e.preventDefault();
         const originalImage = document.getElementById('originalImage').src;
         const watermarkType = document.getElementById('watermarkType').value;
@@ -332,24 +334,23 @@
         const formValues = `Uploaded Input: ${originalImage}, Watermark Type: ${watermarkType}, Watermark Value: ${watermarkValue}, Position: ${position}, Transparency: ${transparency}, Security Checkbox: ${securityCheckbox}, Passphrase: ${passPhrase}, Confirm Passphrase: ${confirmPassPhrase}`;
 
 
+        if (originalImage){
+            handelWatermarking(originalImage, watermarkType, watermarkValue, position, transparency).then(
+                (watermarkedFile) => {
+                    processData(watermarkedFile, customerId);
+                }
+            );
+        }
+        if(originalPDF){
+            handelWatermarkForPDF(originalPDF, watermarkType, watermarkValue, position, transparency).then(
+                (watermarkedFile) => {
+                    processData(watermarkedFile, customerId);
+                }
+            )
+        }
 
-
-        handelWatermarking(originalImage, watermarkType, watermarkValue, position, transparency).then(
-            (watermarkedFile) => {
-                processData(watermarkedFile, customerId);
-            }
-        );
-
-        const doc = new jsPDF({
-            orientation: "landscape",
-            unit: "in",
-            format: [4, 2]
-        });
-
-        doc.text("Hello world!", 1, 1);
-        doc.save("two-by-four.pdf");
-        console.log(doc)
-        console.log(handelWatermarkForPDF(originalPDF))
+        const modifiedPdfBytes = await addWatermarkToPDF(new Uint8Array(originalPDF.src), "CONFIDENTIAL");
+        console.log(modifiedPdfBytes)
     })
 
 
@@ -458,18 +459,28 @@
         });
     }
 
-    function handelWatermarkForPDF(doc) {
-
-        console.log(typeof doc, doc, typeof doc.src, doc.src)
-        const totalPages = doc.internal.getNumberOfPages();
-
-        for (i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setTextColor(150);
-            doc.text(50, doc.internal.pageSize.height - 30, 'Watermark');
+    function handelWatermarkForPDF(targetFile, watermarkType, watermarkValue, position, transparency) {
+        if (watermarkType === "image"){
+            PDFWatermark({
+                pdf_path: targetFile,
+                image_path: watermarkValue,
+                output_dir: './image-wala.pdf',
+            }).then(() => console.log('Done 2!!'))
+                .catch((err) => console.error(err));
+        }
+        else {
+            PDFWatermark({
+                pdf_path: targetFile,
+                text: watermarkValue,
+                output_dir: './text-wala.pdf',
+                textOption: {
+                    x: 530,
+                    y: 20,
+                },
+            }).then(() => console.log('Done!!'))
+                .catch((err) => console.error(err));
         }
 
-        return doc;
     }
 
     function handleFileUpload(file) {
@@ -553,18 +564,61 @@
         fetch('http://ws-18819:8080/watermark/upload', {
             method: 'POST',
             body: data
-        })
-            .then(response => {
-                if (response.data) {
-                    alert("Success !. Your file is WaterMarked, Redirecting to Dashboard")
+        }).then(response => {
+                if (response.ok) { // Check if the response is successful (status code 2xx)
+                    return response.json(); // Parse the JSON response
+                } else {
+                    throw new Error('Network response was not ok.'); // Throw an error for non-successful response
+                }
+            })
+            .then(data => {
+                // Process the JSON data
+                if (data && data.success) {
+                    // Success case
+                    alert("Success! Your file is WaterMarked. Redirecting to Dashboard");
                     window.location.href = '../../../../WaterMarking/components/login/src/dashboard.html';
                 } else {
-                    alert("404. Try again")
+                    // Server returned a success status code but the response does not indicate success
+                    throw new Error('Watermarking failed.');
                 }
-
             })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error during fetch:', error);
+                alert("An error occurred. Please try again later.");
+            });
 
     }
+
+
+    // async function addWatermarkToPDF(pdfBytes, watermarkText) {
+    //     // Load the existing PDF document
+    //     const pdfDoc = await PDFDocument.load(pdfBytes);
+    //
+    //     // Get the first page of the document
+    //     const firstPage = pdfDoc.getPages()[0];
+    //
+    //     // Calculate the text size based on the page size
+    //     const fontSize = 30;
+    //     const { width, height } = firstPage.getSize();
+    //     const textWidth = firstPage.getFont('Helvetica').widthOfTextAtSize(watermarkText, fontSize);
+    //     const textHeight = firstPage.getFont('Helvetica').heightAtSize(fontSize);
+    //     const textX = (width - textWidth) / 2;
+    //     const textY = (height - textHeight) / 2;
+    //
+    //     // Add the watermark text to the page
+    //     firstPage.drawText(watermarkText, {
+    //         x: textX,
+    //         y: textY,
+    //         size: fontSize,
+    //         color: rgb(0.5, 0.5, 0.5), // Gray color for watermark
+    //     });
+    //
+    //     // Serialize the PDF document to bytes
+    //     const modifiedPdfBytes = await pdfDoc.save();
+    //
+    //     return modifiedPdfBytes;
+    // }
 </script>
 
 <script>
