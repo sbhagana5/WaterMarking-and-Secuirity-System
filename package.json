@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "pdf-lib": "^1.17.1",
     "watermarkjs": "^2.1.1"
   }
 }
